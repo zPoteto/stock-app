@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Stock Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="container">
+
+<h1>Stock Tracker</h1>
+
+<div class="top-controls">
+    <input id="symbol" placeholder="Stock (AAPL)">
+    <input id="alertPrice" placeholder="Alert Price">
+    <button onclick="setAlert()">Set Alert</button>
+</div>
+
+<div class="live-price">
+    Current Price: $<span id="livePrice">0.00</span>
+</div>
+
+<div class="intervals">
+    <button onclick="loadChart('1min')">1M</button>
+    <button onclick="loadChart('5min')">5M</button>
+    <button onclick="loadChart('1h')">1H</button>
+    <button onclick="loadChart('1day')">1D</button>
+    <button onclick="loadChart('1week')">1W</button>
+</div>
+
+
+<div class="main-content">
+    <div class="watchlist">
+        <h3>Watchlist</h3>
+        <ul id="watchlist"></ul>
+        <input id="addSymbol" placeholder="Add symbol">
+        <button onclick="addToWatchlist()">Add</button>
+    </div>
+
+    <div class="chart-box">
+        <canvas id="chart"></canvas>
+    </div>
+</div>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>
