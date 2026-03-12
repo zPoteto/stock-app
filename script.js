@@ -1,20 +1,41 @@
 let chart;
-let alertPrice = null;
-let lastPrice = null;
 let currentSymbol = "";
 let currentInterval = "1min";
 let chartType = "line";
 const apiKey = "d082b96785544f2aae33cffad13045a6";
+const serverUrl = "https://stock-app-hqb2.onrender.com"; // Your Render URL
 
 let watchlist = [];
 
-// Set Alert
-function setAlert() {
-    alertPrice = Number(document.getElementById("alertPrice").value);
-    alert("Alert set for $" + alertPrice);
+// NEW: Set Alert on the Cloud Server
+async function setAlert() {
+    const symbol = document.getElementById("symbol").value.toUpperCase();
+    const alertPrice = Number(document.getElementById("alertPrice").value);
+
+    if (!symbol || !alertPrice) {
+        alert("Please enter both a symbol and a price.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${serverUrl}/register-alert`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol, price: alertPrice })
+        });
+
+        if (response.ok) {
+            alert(`Cloud alert set for ${symbol} at $${alertPrice}. You can close this tab now!`);
+        } else {
+            alert("Server error. Check if Render is awake.");
+        }
+    } catch (err) {
+        console.error("Connection failed", err);
+        alert("Could not connect to the server.");
+    }
 }
 
-// Add to Watchlist
+// UI: Add to Watchlist
 function addToWatchlist() {
     const symbol = document.getElementById("addSymbol").value.toUpperCase();
     if (!symbol || watchlist.includes(symbol)) return;
@@ -37,7 +58,7 @@ function renderWatchlist() {
     });
 }
 
-// Load Chart
+// UI: Load Chart
 async function loadChart(interval) {
     currentInterval = interval;
     currentSymbol = document.getElementById("symbol").value.toUpperCase();
@@ -64,11 +85,10 @@ async function loadChart(interval) {
     });
 
     drawChart(times, prices);
-    lastPrice = prices[prices.length - 1];
-    document.getElementById("livePrice").textContent = lastPrice.toFixed(2);
+    document.getElementById("livePrice").textContent = prices[prices.length - 1].toFixed(2);
 }
 
-// Draw Chart
+// UI: Draw Chart
 function drawChart(times, prices) {
     const ctx = document.getElementById("chart");
     if (chart) chart.destroy();
@@ -93,44 +113,16 @@ function drawChart(times, prices) {
     });
 }
 
-// Set Chart Type
-function setChartType(type) {
-    chartType = type;
-    if (currentSymbol) loadChart(currentInterval);
-}
-
-// Check Price & Alert
-async function checkPrice() {
+// Initial price checker for the UI only (updates the screen while open)
+async function updateUIPrice() {
     if (!currentSymbol) return;
-
-    let url = `https://api.twelvedata.com/price?symbol=${currentSymbol}&apikey=${apiKey}`;
-    let response = await fetch(url);
-    let data = await response.json();
-    let price = Number(data.price);
-
-    document.getElementById("livePrice").textContent = price.toFixed(2);
-
-    if (alertPrice && lastPrice < alertPrice && price >= alertPrice) {
-
-    alert(`${currentSymbol} reached $${alertPrice}`);
-
-    let audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-    audio.play();
-
-    // SEND TELEGRAM MESSAGE
-    fetch("https://stock-app-hqb2.onrender.com/send-alert", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            message: `📈 ${currentSymbol} reached $${alertPrice}\nCurrent price: $${price}`
-        })
-    });
+    try {
+        let url = `https://api.twelvedata.com/price?symbol=${currentSymbol}&apikey=${apiKey}`;
+        let response = await fetch(url);
+        let data = await response.json();
+        if (data.price) {
+            document.getElementById("livePrice").textContent = Number(data.price).toFixed(2);
+        }
+    } catch (e) { console.log("UI update failed"); }
 }
-
-    lastPrice = price;
-}
-
-// Update every 5 sec
-setInterval(checkPrice, 5000);
+setInterval(updateUIPrice, 10000);
